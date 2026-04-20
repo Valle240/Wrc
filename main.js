@@ -191,24 +191,35 @@ expandBtn.addEventListener('click', () => {
     // Si ya está activo, lo cerramos
     if (chartModal.classList.contains('active')) {
         cerrarModal();
+        expandBtn.classList.remove('boton-activo');
         return;
     }
 
-    // Si no, lo abrimos
-    const mainChart = Chart.getChart("miGrafica"); // Método directo de Chart.js
+    // 1. Usamos tu función exportada para obtener la instancia real
+    const mainChart = ui.getInstanciaGrafica(); 
     
     if (mainChart && mainChart.data.datasets.length > 0) {
         chartModal.classList.add('active');
+        expandBtn.classList.add('boton-activo');
+
+        // 2. SINCRONIZACIÓN CLAVE: 
+        // Actualizamos la propiedad 'hidden' de cada dataset para que 
+        // coincida exactamente con lo que el usuario está viendo ahora mismo.
+        mainChart.data.datasets.forEach((dataset, index) => {
+            dataset.hidden = !mainChart.isDatasetVisible(index);
+        });
 
         setTimeout(() => {
             if (modalChartInstance) modalChartInstance.destroy();
 
-            // Usamos la configuración original completa para no perder formatos
             const configOriginal = mainChart.config._config;
 
+            // 3. Creamos el clon en el modal
             modalChartInstance = new Chart(modalCanvas, {
                 type: 'line',
-                data: mainChart.data, 
+                // Hacemos una copia profunda de los datos para evitar que 
+                // las dos gráficas se peleen por el mismo objeto en memoria
+                data: JSON.parse(JSON.stringify(mainChart.data)), 
                 options: {
                     ...configOriginal.options,
                     maintainAspectRatio: false,
@@ -224,6 +235,7 @@ expandBtn.addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
     if (e.key === "Escape" && chartModal.classList.contains('active')) {
         cerrarModal();
+        expandBtn.classList.remove('boton-activo');
     }
 });
 
@@ -231,5 +243,6 @@ document.addEventListener('keydown', (e) => {
 chartModal.addEventListener('click', (e) => {
     if (e.target === chartModal) {
         cerrarModal();
+        expandBtn.classList.remove('boton-activo');
     }
 });

@@ -252,6 +252,35 @@ select:disabled {
     animation: scan-line 1.5s infinite;
 }
 
+/* --- COMPORTAMIENTO CUANDO EL MODAL ESTÁ ABIERTO --- */
+
+.btn-expand-hud.boton-activo {
+    /* 1. Lo pasamos a 'fixed' para que flote por encima de la capa negra del modal */
+    position: fixed;
+    
+    /* 2. Lo posicionamos donde quieras (ejemplo: esquina superior derecha de la pantalla) */
+    top: 20px;
+    right: 30px;
+
+    /* 3. ¡IMPORTANTE! El z-index debe ser mayor al del modal (que es 9999) */
+    z-index: 10001; 
+
+    /* 4. Cambios visuales opcionales para que se note que está "activo" */
+    border-color: #fff;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Opcional: Hacer que el icono de escaneo sea más rápido o cambie de color al estar activo */
+.btn-expand-hud.boton-activo .icon-scan {
+    border-color: #fff;
+}
+
+.btn-expand-hud.boton-activo .icon-scan::after {
+    background: #fff;
+    animation-duration: 0.8s; /* Escaneo más frenético */
+}
+
 @keyframes scan-line {
     0% { top: 0%; }
     50% { top: 100%; }
@@ -274,6 +303,7 @@ select:disabled {
 }
 
 .chart-modal-content {
+    position: relative;
     width: 90vw;
     height: 85vh;
     background: var(--card-bg);
@@ -311,11 +341,6 @@ select:disabled {
     height: 100% !important;
 }
 
-canvas {
-    width: 100% !important;
-    height: 500px !important;
-}
-
 .rally-logo-img {
     position: absolute;
     top: 20px;
@@ -330,4 +355,49 @@ footer {
     font-family: monospace;
     font-size: 0.8rem;
     color: var(--text-gray);
+}
+
+
+/* --- RESPONSIVE DESIGN --- */
+
+/* Ajuste general para contenedores en móviles */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .selector-container {
+        flex-direction: column; /* Selectores uno debajo de otro */
+        gap: 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .main-display-container {
+        flex-direction: column; /* Gráfica arriba, leyenda abajo */
+        height: auto; /* Quitamos la altura fija para que crezca */
+    }
+
+    .chart-container {
+        height: 300px; /* Altura fija para la gráfica en móvil */
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .custom-legend {
+        width: 100%; /* La leyenda ocupa todo el ancho */
+        height: 400px; /* Limitamos su altura para que no sea infinita */
+    }
+
+    .rally-logo-img {
+        height: 40px; /* Logo más pequeño en móvil */
+        top: 10px;
+        right: 10px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        margin-top: 40px; /* Espacio para el logo */
+    }
 }
