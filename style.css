@@ -1,0 +1,333 @@
+/* Paleta: Negro (#050505), Gris (#1a1a1a), Naranja (#ff6600) */
+:root {
+    --bg-color: #050505;
+    --card-bg: #121212;
+    --accent-orange: #ff6600;
+    --text-white: #e0e0e0;
+    --text-gray: #777777;
+    --border-color: #2a2a2a;
+}
+
+body {
+    /* Fuentes del sistema: se ven profesionales y no requieren descarga */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-white);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    color: var(--accent-orange);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 900;
+    margin-bottom: 25px;
+    text-shadow: 2px 2px 0px rgba(0,0,0,1);
+}
+
+.selector-container {
+    background-color: var(--card-bg);
+    padding: 15px 25px;
+    border-radius: 2px; /* Esquinas más marcadas para look técnico */
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--accent-orange); /* Detalle de color superior */
+    display: flex;
+    gap: 20px;
+}
+
+label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+select {
+    background-color: #000000;
+    color: white;
+    border: 1px solid #444;
+    padding: 8px;
+    font-family: monospace; /* Fuente monoespaciada para datos */
+    cursor: pointer;
+}
+
+select:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Contenedor para alinear gráfica y leyenda */
+.main-display-container {
+    display: flex;
+    flex-direction: row;
+    width: 95vw;
+    max-width: 1400px;
+    gap: 15px;
+    height: 550px; /* Altura fija para que el scroll funcione */
+}
+
+.chart-container {
+    flex: 1; /* La gráfica toma el espacio restante */
+    background-color: var(--card-bg);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.custom-legend {
+    width: 380px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    overflow-y: auto; /* ESTO es lo que permite el scroll */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.legend-header {
+    display: grid;
+    grid-template-columns: 1fr 70px 60px; /* Anchos fijos para Tiempo y Diff */
+    padding: 10px 8px;
+    font-size: 0.7rem;
+    color: var(--accent-orange);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.legend-item {
+    display: grid;
+    grid-template-columns: 1fr 70px 60px; /* Misma estructura que el header */
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+    border-left: 3px solid transparent;
+    gap: 5px;
+}
+
+.legend-item:hover {
+    background-color: #252525;
+}
+
+.legend-item.hidden {
+    opacity: 0.3;
+    text-decoration: line-through;
+}
+
+/* Contenedor para Color + Nombre */
+.pilot-info {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.pilot-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 5px;
+}
+
+/* Estilo para las columnas de datos */
+.pilot-time {
+    font-size: 0.8rem;
+    text-align: right;
+    color: var(--text-white);
+}
+
+.pilot-diff {
+    font-size: 0.75rem;
+    text-align: right;
+    color: var(--accent-orange);
+    font-weight: bold;
+}
+
+.legend-color-box {
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    flex-shrink: 0; /* Evita que el cuadro se deforme */
+    border-radius: 1px;
+}
+
+/* --- PERSONALIZACIÓN DE LA SCROLLBAR (ESTÉTICA TECH) --- */
+
+/* 1. Contenedor del scroll (la "pista") */
+.custom-legend::-webkit-scrollbar {
+    width: 6px;               /* Muy fina para que sea elegante */
+    background-color: #050505; /* Fondo igual al de la web */
+}
+
+/* 2. El tirador (la pieza que se mueve) */
+.custom-legend::-webkit-scrollbar-thumb {
+    background-color: #333;    /* Gris oscuro por defecto */
+    border-radius: 10px;       /* Bordes redondeados */
+    border: 1px solid #050505; /* Crea un efecto de separación */
+}
+
+/* 3. El tirador cuando pasas el ratón (Hover) */
+.custom-legend::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-orange); /* Se ilumina en naranja */
+    box-shadow: 0 0 8px var(--accent-orange); /* Efecto neón sutil */
+}
+
+/* 4. Esquina de la barra (si existiera) */
+.custom-legend::-webkit-scrollbar-corner {
+    background-color: #050505;
+}
+
+/* Compatibilidad para Firefox */
+.custom-legend {
+    scrollbar-width: thin;
+    scrollbar-color: #333 #050505;
+}
+
+/* Contenedor del botón para posicionarlo sobre la gráfica */
+.btn-expand-hud {
+    position: absolute; /* Posición absoluta respecto al contenedor padre */
+    top: 1px;          /* Separación de 15px desde la parte superior */
+    right: 1px;        /* Separación de 15px desde la derecha */
+
+    background: rgba(0, 0, 0, 0.6); /* Fondo negro con 60% de opacidad */
+    color: var(--accent-orange);    /* Color del texto usando una variable CSS */
+    border: 1px solid var(--accent-orange); /* Borde fino del mismo color */
+
+    padding: 4px 4px; /* Espaciado interno (arriba/abajo y lados) */
+
+    font-family: 'Orbitron', sans-serif; /* Fuente estilo futurista/tecnológica */
+    font-size: 11px;                     /* Tamaño de texto pequeño */
+    letter-spacing: 2px;                 /* Espacio extra entre letras */
+
+    cursor: pointer; /* Cambia el cursor a mano al pasar por encima */
+
+    overflow: hidden; /* Oculta contenido que sobresalga (útil para animaciones) */
+
+    transition: all 0.3s ease; /* Suaviza cualquier cambio (hover, etc.) en 0.3s */
+
+    display: flex;         /* Usa flexbox para organizar el contenido interno */
+    align-items: center;  /* Centra verticalmente los elementos dentro */
+    gap: 0px;             /* Espacio entre elementos (por ejemplo icono + texto) */
+}
+
+.btn-expand-hud:hover {
+    background: var(--accent-orange);
+    color: #000;
+    box-shadow: 0 0 15px var(--accent-orange);
+    transform: translateY(-2px);
+}
+
+/* El pequeño icono decorativo de "escaneo" */
+.icon-scan {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent-orange);
+    position: relative;
+    border-radius: 2px;
+}
+
+.btn-expand-hud:hover .icon-scan {
+    border-color: #000;
+}
+
+.icon-scan::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -2px;
+    width: 14px;
+    height: 1px;
+    background: var(--accent-orange);
+    animation: scan-line 1.5s infinite;
+}
+
+@keyframes scan-line {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+}
+
+/* Overlay oscuro */
+.chart-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    /* Transición de entrada/salida de opacidad */
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-modal-content {
+    width: 90vw;
+    height: 85vh;
+    background: var(--card-bg);
+    border: 1px solid var(--accent-orange);
+    padding: 20px;
+    transform: scale(0.8);
+    opacity: 0;
+    /* Transición con efecto rebote suave */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+}
+
+/* Estado activo */
+.chart-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.chart-modal.active .chart-modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Asegúrate de que estas reglas estén en tu style.css */
+.chart-modal {
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Entrada suave */
+}
+
+.chart-modal-content {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Efecto rebote suave */
+}
+
+/* Canvas dentro del modal */
+#modalChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+canvas {
+    width: 100% !important;
+    height: 500px !important;
+}
+
+.rally-logo-img {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    height: 70px;
+    width: auto;
+    filter: drop-shadow(0 0 5px rgba(255,102,0,0.4));
+}
+
+footer {
+    margin-top: 50px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--text-gray);
+}

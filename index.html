@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WRC Telemetry System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="chartModal" class="chart-modal">
+        <div class="chart-modal-content">
+            <canvas id="modalChart"></canvas>
+        </div>
+    </div>
+
+    <div id="rally-logo-container">
+        <img id="rally-logo" src="" alt="Rally Logo" class="rally-logo-img" style="display: none;">
+    </div>
+
+    <h1>WRC <span style="color: #ffffff;">Archive</span></h1>
+
+    <div class="selector-container">
+        <div>
+            <label>Year</label>
+            <select id="yearSelect">
+                <option value="">-- SELECT --</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Event</label>
+            <select id="rallySelect" disabled>
+                <option value="">-- SELECT YEAR --</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Stage</label>
+            <select id="tramoSelect" disabled>
+                <option value="">-- SELECT EVENT --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-display-container">
+        <div class="chart-container" style="position: relative;">
+            <button id="expandChart" class="btn-expand-hud">
+                <span class="icon-scan"></span>
+                <span class="text-btn"></span>
+            </button>
+            <canvas id="miGrafica"></canvas>
+        </div>
+        <div id="custom-legend" class="custom-legend"></div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+
+    <footer>
+        &copy; 2026 <strong>WRC DATA ARCHIVE</strong> // NOT ADVANCED TELEMETRY SYSTEM // All rights not reserved.
+    </footer>
+</body>
+</html>
