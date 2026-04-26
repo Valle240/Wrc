@@ -76,9 +76,14 @@ rallySelect.addEventListener('change', async () => {
         // 1. Cargar Pilotos
         const entriesData = await api.fetchEntries(year, rally);
         tripulacionesGlobal = {}; 
+        
         if (entriesData) {
+            // ACTUALIZAMOS EL SELECTOR AQUÍ
+            ui.actualizarSelectorCategorias(entriesData); 
+
             entriesData.forEach(entry => {
-                tripulacionesGlobal[entry.entryId.toString()] = `${entry.driver.abbvName} / ${entry.codriver.abbvName}`;
+                // CAMBIO CLAVE: Guardamos el objeto entero, no solo el string del nombre
+                tripulacionesGlobal[entry.entryId.toString()] = entry; 
             });
         }
 
@@ -245,4 +250,29 @@ chartModal.addEventListener('click', (e) => {
         cerrarModal();
         expandBtn.classList.remove('boton-activo');
     }
+});
+
+
+// Busca y reemplaza el listener de 'groupFilter' por este:
+// Busca el antiguo listener de 'groupFilter' y cámbialo por este:
+const groupBtns = document.getElementById('groupFilterButtons');
+groupBtns.addEventListener('categoryChange', (e) => {
+    const selectedGroup = e.detail; // El valor viene en e.detail
+    const chart = ui.getInstanciaGrafica();
+    if (!chart) return;
+
+    let contadorVisibles = 0;
+    chart.data.datasets.forEach((ds, index) => {
+        const perteneceAlGrupo = (selectedGroup === "All" || ds.group === selectedGroup);
+        if (perteneceAlGrupo && contadorVisibles < 10) {
+            chart.setDatasetVisibility(index, true);
+            contadorVisibles++;
+        } else {
+            chart.setDatasetVisibility(index, false);
+        }
+    });
+
+    chart.update();
+    ui.generarLeyendaHTML(chart.data.datasets); // Actualizar la leyenda que está debajo
+    ui.actualizarVisibilidadTabla();
 });

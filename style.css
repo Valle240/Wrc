@@ -117,11 +117,12 @@ select option {
 }
 
 .custom-legend {
-    width: 380px;
+    flex: 1; /* ¡CLAVE! Esto le dice: "ocupa el espacio que sobre, pero no te pases" */
+    min-height: 0; /* Obligatorio en algunos navegadores para que el scroll funcione en flex */
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     padding: 10px;
-    overflow-y: auto; /* ESTO es lo que permite el scroll */
+    overflow-y: auto; /* Ahora sí funcionará */
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -228,6 +229,14 @@ select option {
 .custom-legend {
     scrollbar-width: thin;
     scrollbar-color: #333 #050505;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column; /* Apila filtros arriba y leyenda abajo */
+    width: 380px;
+    height: 100%;          /* Ocupa los 550px del .main-display-container */
+    overflow: hidden;      /* Evita que el panel entero crezca */
 }
 
 /* Contenedor del botón para posicionarlo sobre la gráfica */
@@ -446,6 +455,36 @@ td {
 .top-speed { color: #00ff00; font-weight: bold; }
 
 
+/* Estilos para los botones (asegúrate de que estén así) */
+.category-buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.category-btn {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #888;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: monospace;
+}
+
+.category-btn.active {
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
+    background: rgba(255, 102, 0, 0.1);
+}
+
+.filter-wrapper {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+
 
 /* --- RESPONSIVE DESIGN --- */
 
@@ -508,21 +547,41 @@ td {
 
     .custom-legend {
         width: 100%; 
-        height: auto;
-        max-height: 400px; /* Cambiado a max-height: así si hay 3 pilotos, no queda un gran hueco negro */
+        /* Cambiamos height: auto por una altura fija para forzar el scroll */
+        height: 300px; 
+        max-height: 400px; 
+        overflow-y: auto; /* Asegura que el scroll esté activo */
         box-sizing: border-box;
+        border-top: 2px solid var(--accent-orange); /* Separador visual respecto a la gráfica */
+        background-color: var(--card-bg);
     }
 
     /* 4. Ajustes Internos de la Leyenda para Móvil */
     .legend-header, .legend-item {
-        /* Reducimos el ancho fijo de Tiempo (60px) y Diff (50px) para dejar más espacio al nombre del piloto */
-        grid-template-columns: 1fr 60px 50px; 
-        padding: 8px 5px;
+        /* 1fr para el nombre, y anchos fijos pequeños para los tiempos */
+        grid-template-columns: 1fr 75px 65px; 
+        gap: 5px;
+        padding: 10px 5px;
+    }
+
+    .pilot-name {
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Si el nombre es muy largo, pone "..." */
     }
 
     .pilot-time { font-size: 0.75rem; }
     .pilot-diff { font-size: 0.7rem; }
 
+
+    .side-panel {
+        width: 100%;
+        height: auto; /* En móvil que fluya hacia abajo */
+        display: flex;
+        flex-direction: column;
+    }
+    
     /* 5. Análisis de Sectores (Tabla Inferior) */
     .splits-analysis-container {
         width: 100%;
