@@ -414,74 +414,44 @@ td {
 /* --- RESPONSIVE DESIGN --- */
 
 /* Ajuste general para contenedores en móviles */
+/* Ajuste general para contenedores en móviles */
 @media (max-width: 768px) {
-    /* 1. Ajuste del contenedor principal */
-    .splits-analysis-container {
+    body {
+        padding: 10px;
+    }
+
+    .selector-container {
+        flex-direction: column; /* Selectores uno debajo de otro */
+        gap: 10px;
         width: 100%;
-        margin-top: 15px;
+        box-sizing: border-box;
+    }
+
+    .main-display-container {
+        flex-direction: column; /* Gráfica arriba, leyenda abajo */
+        height: auto; /* Quitamos la altura fija para que crezca */
+    }
+
+    .chart-container {
+        height: 300px; /* Altura fija para la gráfica en móvil */
+        width: 100%;
         padding: 10px;
         box-sizing: border-box;
-        border-radius: 0; /* En móvil mejor sin bordes redondeados para ganar espacio */
     }
 
-    /* 2. Scroll lateral ultra fluido para iOS */
-    .table-wrapper {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Scroll suave característico de iPhone */
-        position: relative;
+    .custom-legend {
+        width: 100%; /* La leyenda ocupa todo el ancho */
+        height: 400px; /* Limitamos su altura para que no sea infinita */
     }
 
-    /* 3. Tabla compacta */
-    table {
-        font-size: 0.75rem; /* Letra un poco más pequeña para que quepa más */
-        min-width: 600px; /* Forzamos que la tabla sea ancha para que el scroll tenga sentido */
+    .rally-logo-img {
+        height: 40px; /* Logo más pequeño en móvil */
+        top: 10px;
+        right: 10px;
     }
 
-    /* 4. FIJAR COLUMNA DEL PILOTO (Crucial en móvil) */
-    /* Esto permite ver los nombres mientras te desplazas por los splits */
-    td:first-child, th:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        background-color: #121212 !important; /* Mismo color que el fondo de la carta */
-        box-shadow: 2px 0 5px rgba(0,0,0,0.5); /* Sombra para indicar que el contenido pasa por debajo */
-        min-width: 100px;
-        max-width: 120px;
-    }
-
-    /* 5. Ajuste de la Leyenda Inferior */
-    #speedTableLegend {
-        flex-direction: column; /* Apilamos los bloques en vertical */
-        align-items: flex-start !important;
-        gap: 12px !important;
-        padding: 15px 10px;
-    }
-
-    /* Hacemos que los grupos de la leyenda ocupen todo el ancho */
-    #speedTableLegend > div {
-        width: 100%;
-        justify-content: space-between;
-        border-left: none !important;
-        padding-left: 0 !important;
-    }
-
-    /* La barra de gradiente un poco más larga para que sea fácil de ver */
-    .gradient-bar-container {
-        width: 100% !important;
-    }
-
-    /* 6. Evitar zoom automático en selects (molesto en iPhone) */
-    select {
-        font-size: 16px !important; /* iOS hace zoom si la fuente es menor a 16px */
-    }
-}
-
-/* Optimización para el notch/Dynamic Island si el iPhone está en horizontal */
-@supports (padding: env(safe-area-inset-left)) {
-    body {
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+    h1 {
+        font-size: 1.5rem;
+        margin-top: 40px; /* Espacio para el logo */
     }
 }
