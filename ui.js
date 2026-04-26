@@ -238,7 +238,7 @@ export function getInstanciaGrafica() {
     return miGrafica;
 }
 
-
+/*
 function generarTablaVelocidades(pilotos, tripulaciones, splitIds, mapaDistancias, etapaInfo) {
     const headerRow = document.getElementById('avgSpeedHeader');
     const body = document.getElementById('avgSpeedBody');
@@ -411,6 +411,187 @@ function generarTablaVelocidades(pilotos, tripulaciones, splitIds, mapaDistancia
                     <span>Min Sector: <b style="color: #eee;">${minAbsoluta} km/h</b></span>
                 </div>
                 
+            </div>
+        </div>
+    `;
+
+    container.innerHTML += `
+        <div class="analysis-footer" style="display: flex; justify-content: space-between; margin-top: 15px; color: #777;">
+            <div class="tech-note" style="width: 30%;">
+                <span style="color: var(--accent-orange);">Val*</span>: Indica anomalías (pinchazos o salidas).
+            </div>
+            <div class="tech-note" style="width: 30%;">
+                <span style="color: #eee;">Max Sector</span>: Velocidad media absoluta más alta registrada.
+            </div>
+            <div class="tech-note" style="width: 30%;">
+                <span style="color: #eee;">Avg Pace</span>: Ritmo medio de los tiempos "scratch" del tramo.
+            </div>
+        </div>
+    `;
+}
+*/
+
+function generarTablaVelocidades(pilotos, tripulaciones, splitIds, mapaDistancias, etapaInfo) {
+    const headerRow = document.getElementById('avgSpeedHeader');
+    const body = document.getElementById('avgSpeedBody');
+    // Buscamos o creamos el contenedor de la leyenda
+    let legendDiv = document.getElementById('speedTableLegend');
+    
+    if (!headerRow || !body || !miGrafica) return; 
+
+    // 1. Generar Encabezados
+    headerRow.innerHTML = '<th>Driver</th>';
+    const distancias = [0]; 
+    splitIds.forEach((id, index) => {
+        const km = mapaDistancias[id] || 0;
+        distancias.push(km);
+        headerRow.innerHTML += `<th>Split ${index + 1} <br><small>${km}km</small></th>`;
+    });
+    
+    if (etapaInfo && etapaInfo.distance) {
+        distancias.push(etapaInfo.distance);
+        headerRow.innerHTML += `<th>Finish <br><small>${etapaInfo.distance}km</small></th>`;
+    }
+
+    body.innerHTML = '';
+
+    // --- PASO 2: PRE-CALCULAR Y FILTRAR ANOMALÍAS (OUTLIERS) ---
+    const matrixVelocidades = []; 
+    const statsPorSplit = []; 
+    const velocidadesValidasPorSplit = []; 
+
+    for (let i = 1; i < distancias.length; i++) {
+        velocidadesValidasPorSplit[i] = [];
+    }
+
+    miGrafica.data.datasets.forEach((dataset, index) => {
+        matrixVelocidades[index] = [];
+        if (!miGrafica.isDatasetVisible(index)) return; 
+
+        const tiempos = dataset.data; 
+
+        for (let i = 1; i < tiempos.length; i++) {
+            const dDelta = distancias[i] - distancias[i-1];
+            const tActual = tiempos[i];
+            const tAnterior = tiempos[i-1];
+
+            if (tActual === null || tAnterior === null) {
+                matrixVelocidades[index][i] = null;
+                continue;
+            }
+
+            const tDelta = tActual - tAnterior;
+
+            if (tDelta > 0 && dDelta > 0) {
+                const avgSpeedVal = dDelta / (tDelta / 3600); 
+                
+                if (avgSpeedVal > 220) {
+                    matrixVelocidades[index][i] = 'ERR_MAX';
+                } else {
+                    matrixVelocidades[index][i] = avgSpeedVal;
+                    velocidadesValidasPorSplit[i].push(avgSpeedVal);
+                }
+            } else {
+                matrixVelocidades[index][i] = 'ERR';
+            }
+        }
+    });
+
+    for (let i = 1; i < distancias.length; i++) {
+        const velocidades = velocidadesValidasPorSplit[i];
+        if (velocidades.length > 0) {
+            const maxSpeed = Math.max(...velocidades);
+            const umbralAnomalia = maxSpeed * 0.30; 
+            
+            const velocidadesCompetitivas = velocidades.filter(v => v >= umbralAnomalia);
+            const minCompetitivo = velocidadesCompetitivas.length > 0 ? Math.min(...velocidadesCompetitivas) : maxSpeed;
+
+            statsPorSplit[i] = { 
+                max: maxSpeed, 
+                min: minCompetitivo,
+                umbral: umbralAnomalia 
+            };
+        } else {
+            statsPorSplit[i] = { max: 100, min: 0, umbral: 0 };
+        }
+    }
+
+    // --- PASO 3: DIBUJAR LA TABLA ---
+    miGrafica.data.datasets.forEach((dataset, index) => {
+        if (!miGrafica.isDatasetVisible(index)) return;
+
+        const row = document.createElement('tr');
+        row.style.borderLeft = `3px solid ${dataset.borderColor}`;
+        
+        let html = `<td><small>${dataset.label}</small></td>`;
+
+        for (let i = 1; i < distancias.length; i++) {
+            const val = matrixVelocidades[index][i];
+            const stats = statsPorSplit[i];
+
+            if (val === null || val === undefined) {
+                html += `<td style="color: #555; font-style: italic;" title="Missing Split Data">NaN</td>`;
+            } else if (val === 'ERR_MAX') {
+                html += `<td style="color: #ff4444; font-weight: bold;" title="Impossible Speed (>220km/h)">ERR*</td>`;
+            } else if (val === 'ERR') {
+                html += `<td style="color: #ffaa00;" title="Time or Distance Error">ERR</td>`;
+            } else {
+                if (val < stats.umbral) {
+                    html += `<td style="color: #999999; font-style: italic;" title="Major Time Loss Detected">${val.toFixed(1)}*</td>`;
+                } else {
+                    let hue = 60; 
+                    if (stats.max > stats.min) {
+                        const ratio = (val - stats.min) / (stats.max - stats.min);
+                        hue = ratio * 120; 
+                    }
+                    html += `<td style="color: hsl(${hue}, 100%, 60%); font-weight: bold;">${val.toFixed(1)}</td>`;
+                }
+            }
+        }
+        row.innerHTML = html;
+        body.appendChild(row);
+    });
+
+    // --- PASO 4: INYECTAR LA MINI-LEYENDA ---
+    const tableWrapper = document.querySelector('.table-wrapper') || body.parentElement;
+    
+    if (!legendDiv) {
+        legendDiv = document.createElement('div');
+        legendDiv.id = 'speedTableLegend';
+        tableWrapper.appendChild(legendDiv);
+    }
+    
+    const todasLasVelocidades = statsPorSplit.filter(s => s).map(s => s.max);
+    const todasLasMinimas = statsPorSplit.filter(s => s).map(s => s.min);
+
+    const maxAbsoluta = todasLasVelocidades.length > 0 ? Math.max(...todasLasVelocidades).toFixed(1) : "0";
+    const minAbsoluta = todasLasMinimas.length > 0 ? Math.min(...todasLasMinimas).toFixed(1) : "0";
+    const avgTramo = todasLasVelocidades.length > 0 ? (todasLasVelocidades.reduce((a, b) => a + b, 0) / todasLasVelocidades.length).toFixed(1) : "0";
+
+    // Hemos mantenido tu estructura HTML añadiendo las clases "analysis-footer" y "tech-note" 
+    // para que el CSS responsive que hicimos pueda actuar.
+    legendDiv.innerHTML = `
+        <div style="margin-top: 20px; border-top: 1px dashed #333; padding-top: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 0.7rem; color: #00ff00; font-weight: bold; text-transform: uppercase;">Fast</span>
+                <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, #00ff00, #ffff00, #ff0000);"></div>
+                <span style="font-size: 0.7rem; color: #ff4444; font-weight: bold; text-transform: uppercase;">Slow</span>
+            </div>
+
+            <div class="analysis-footer" style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 0.7rem; color: #888;">
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <span><b style="color: #999; font-style: italic;">Val*</b> Possible Issue</span>
+                    <span><b style="color: #ffaa00">ERR</b> Data Error</span>
+                    <span><b style="color: #ff4444">ERR*</b> Invalid (>220km/h)</span>
+                </div>
+
+                <div style="display: flex; gap: 12px; border-left: 1px solid #333; padding-left: 12px; flex-wrap: wrap;">
+                    <span>Max Sector: <b style="color: #eee;">${maxAbsoluta} km/h</b></span>
+                    <span>Avg Pace: <b style="color: #eee;">${avgTramo} km/h</b></span>
+                    <span>Min Sector: <b style="color: #eee;">${minAbsoluta} km/h</b></span>
+                </div>
             </div>
         </div>
     `;

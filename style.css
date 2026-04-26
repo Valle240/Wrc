@@ -414,44 +414,127 @@ td {
 /* --- RESPONSIVE DESIGN --- */
 
 /* Ajuste general para contenedores en móviles */
-/* Ajuste general para contenedores en móviles */
+/* --- RESPONSIVE DESIGN --- */
+
 @media (max-width: 768px) {
     body {
         padding: 10px;
     }
 
+    /* 1. Títulos y Logos */
+    h1 {
+        font-size: 1.8rem; /* Ligeramente más grande que 1.5rem, da mejor empaque */
+        margin-top: 40px; /* Espacio para el logo */
+        margin-bottom: 15px;
+        text-align: center; /* Centrar el título en móvil queda más simétrico */
+    }
+
+    .rally-logo-img {
+        height: 50px; /* 40px puede ser algo pequeño, 50px destaca sin molestar */
+        top: 10px;
+        right: 10px;
+    }
+
+    /* 2. Selectores (Diseño Táctil) */
     .selector-container {
-        flex-direction: column; /* Selectores uno debajo de otro */
-        gap: 10px;
+        flex-direction: column;
+        gap: 15px;
         width: 100%;
+        box-sizing: border-box;
+        padding: 15px;
+    }
+
+    .selector-container > div {
+        width: 100%; /* Obliga al div contenedor a usar todo el ancho */
+    }
+
+    select {
+        width: 100%; /* Los botones anchos son mucho mejores para los dedos */
+        font-size: 1rem; /* Aumentar fuente evita que iOS haga zoom automático al tocar */
+        padding: 10px;
         box-sizing: border-box;
     }
 
+    /* 3. Contenedores de Gráfica y Leyenda */
     .main-display-container {
-        flex-direction: column; /* Gráfica arriba, leyenda abajo */
-        height: auto; /* Quitamos la altura fija para que crezca */
+        flex-direction: column; 
+        height: auto; 
+        width: 100%;
     }
 
     .chart-container {
-        height: 300px; /* Altura fija para la gráfica en móvil */
+        height: 350px; /* Le damos 50px más para que las líneas tengan más respiro */
         width: 100%;
         padding: 10px;
         box-sizing: border-box;
     }
 
     .custom-legend {
-        width: 100%; /* La leyenda ocupa todo el ancho */
-        height: 400px; /* Limitamos su altura para que no sea infinita */
+        width: 100%; 
+        height: auto;
+        max-height: 400px; /* Cambiado a max-height: así si hay 3 pilotos, no queda un gran hueco negro */
+        box-sizing: border-box;
     }
 
-    .rally-logo-img {
-        height: 40px; /* Logo más pequeño en móvil */
-        top: 10px;
-        right: 10px;
+    /* 4. Ajustes Internos de la Leyenda para Móvil */
+    .legend-header, .legend-item {
+        /* Reducimos el ancho fijo de Tiempo (60px) y Diff (50px) para dejar más espacio al nombre del piloto */
+        grid-template-columns: 1fr 60px 50px; 
+        padding: 8px 5px;
     }
 
-    h1 {
-        font-size: 1.5rem;
-        margin-top: 40px; /* Espacio para el logo */
+    .pilot-time { font-size: 0.75rem; }
+    .pilot-diff { font-size: 0.7rem; }
+
+    /* 5. Análisis de Sectores (Tabla Inferior) */
+    .splits-analysis-container {
+        width: 100%;
+        padding: 10px;
+        margin-top: 15px;
+    }
+
+    .analysis-header {
+        flex-direction: column; /* Apila el título y el subtítulo tecnológico */
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    th, td {
+        padding: 6px 8px; /* Reducimos el relleno para que quepan más columnas en pantalla */
+        font-size: 0.75rem;
+    }
+
+    /* 6. Modal y Botones Flotantes */
+    .chart-modal-content {
+        width: 95vw; /* Aprovecha casi toda la pantalla */
+        height: 90vh;
+        padding: 10px;
+    }
+
+    .btn-expand-hud {
+        padding: 8px 8px; /* Aumentamos el área táctil del botón de expandir */
+        top: 5px;
+        right: 5px;
+    }
+    
+    .chart-container {
+        height: 450px; /* Aumentado de 300px a 450px para mejor visibilidad */
+        width: 100%;
+        padding: 5px;
+    }
+
+    /* Ajuste para la leyenda de texto debajo de la tabla */
+    .analysis-footer {
+        flex-direction: column !important; /* Forzamos que las notas vayan una debajo de otra */
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tech-note {
+        width: 100% !important;
+        border-left: 2px solid var(--accent-orange);
+        padding-left: 10px;
+        font-size: 0.75rem;
+        line-height: 1.2;
     }
 }
