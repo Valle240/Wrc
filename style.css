@@ -50,17 +50,53 @@ label {
 }
 
 select {
-    background-color: #000000;
-    color: white;
-    border: 1px solid #444;
-    padding: 8px;
-    font-family: monospace; /* Fuente monoespaciada para datos */
+    /* 1. Eliminamos el diseño nativo del navegador/SO */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    
+    /* 2. Aplicamos nuestros colores del root */
+    background-color: var(--bg-color);
+    color: var(--text-white);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    
+    /* 3. Ajustamos el espacio: damos más padding a la derecha para que el texto no pise la flecha */
+    padding: 10px 35px 10px 12px;
+    font-family: monospace;
+    font-size: 0.85rem;
     cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease-in-out;
+    
+    /* 4. Inyectamos nuestra propia flecha (color naranja #ff6600) usando un SVG en Base64 */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6600' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
 }
 
+/* Efecto al pasar el ratón o hacer click (Focus) */
+select:hover:not(:disabled),
+select:focus {
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 5px rgba(255, 102, 0, 0.2);
+}
+
+/* Estado deshabilitado */
 select:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
+    border-color: var(--border-color);
+    /* Cambiamos la flecha a gris (#777777) para que coincida con el estado apagado */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23777777' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+/* Forzar color de fondo en las opciones desplegadas (el menú en sí sigue dependiendo del SO, pero al menos forzamos colores oscuros donde se puede) */
+select option {
+    background-color: var(--card-bg);
+    color: var(--text-white);
+    font-family: monospace;
 }
 
 /* Contenedor para alinear gráfica y leyenda */
@@ -463,9 +499,10 @@ td {
     }
 
     .chart-container {
-        height: 350px; /* Le damos 50px más para que las líneas tengan más respiro */
+        height: 50vh; /* Se adapta a la pantalla del móvil */
+        min-height: 300px; /* Pero nunca menos de 300px para que no se vea aplastada */
         width: 100%;
-        padding: 10px;
+        padding: 5px; /* Menos padding para ganar espacio de dibujo */
         box-sizing: border-box;
     }
 
