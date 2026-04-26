@@ -6,6 +6,10 @@
 import { chartOptions } from './config.js';
 
 let miGrafica;
+// Añade estas para que la leyenda pueda "recordar" qué tramo hay cargado
+let ultimoSplitIds = [];
+let ultimoMapaDistancias = {};
+let ultimaInfoEtapa = null;
 
 /**
  * Función principal que orquestra el dibujo de la gráfica
@@ -64,6 +68,14 @@ export function renderizarGrafica(tiempos, tripulaciones, infoEtapas) {
     
     // GENERAR LEYENDA HTML
     generarLeyendaHTML(datasets);
+
+    // GUARDAMOS LOS DATOS EN LAS VARIABLES QUE ACABAMOS DE CREAR
+    ultimoSplitIds = splitIdsUnicos;
+    ultimoMapaDistancias = mapaDistancias;
+    ultimaInfoEtapa = infoDeEstaEtapa;
+
+    // Pasamos pilotosArray y tripulaciones para la carga inicial
+    generarTablaVelocidades(pilotosArray, tripulaciones, ultimoSplitIds, ultimoMapaDistancias, ultimaInfoEtapa);
 }
 
 function generarLeyendaHTML(datasets) {
@@ -112,6 +124,8 @@ function generarLeyendaHTML(datasets) {
             miGrafica.setDatasetVisibility(index, !isVisible);
             miGrafica.update();
             item.classList.toggle('hidden');
+
+            actualizarVisibilidadTabla();
         };
 
         legendContainer.appendChild(item);
@@ -222,4 +236,210 @@ function crearDatasets(pilotosArray, tripulaciones, splitIdsUnicos) {
 // Añade esto al final de ui.js para poder exportar la instancia actual
 export function getInstanciaGrafica() {
     return miGrafica;
+}
+
+
+function generarTablaVelocidades(pilotos, tripulaciones, splitIds, mapaDistancias, etapaInfo) {
+    const headerRow = document.getElementById('avgSpeedHeader');
+    const body = document.getElementById('avgSpeedBody');
+    // Buscamos o creamos el contenedor de la leyenda
+    let legendDiv = document.getElementById('speedTableLegend');
+    
+    if (!headerRow || !body || !miGrafica) return; 
+
+    // 1. Generar Encabezados
+    headerRow.innerHTML = '<th>Driver</th>';
+    const distancias = [0]; 
+    splitIds.forEach((id, index) => {
+        const km = mapaDistancias[id] || 0;
+        distancias.push(km);
+        headerRow.innerHTML += `<th>Split ${index + 1} <br><small>${km}km</small></th>`;
+    });
+    
+    if (etapaInfo && etapaInfo.distance) {
+        distancias.push(etapaInfo.distance);
+        headerRow.innerHTML += `<th>Finish <br><small>${etapaInfo.distance}km</small></th>`;
+    }
+
+    body.innerHTML = '';
+
+    // --- PASO 2: PRE-CALCULAR Y FILTRAR ANOMALÍAS (OUTLIERS) ---
+    const matrixVelocidades = []; 
+    const statsPorSplit = []; 
+    const velocidadesValidasPorSplit = []; // Almacén para analizar la media
+
+    for (let i = 1; i < distancias.length; i++) {
+        velocidadesValidasPorSplit[i] = [];
+    }
+
+    miGrafica.data.datasets.forEach((dataset, index) => {
+        matrixVelocidades[index] = [];
+        if (!miGrafica.isDatasetVisible(index)) return; 
+
+        const tiempos = dataset.data; 
+
+        for (let i = 1; i < tiempos.length; i++) {
+            const dDelta = distancias[i] - distancias[i-1];
+            const tActual = tiempos[i];
+            const tAnterior = tiempos[i-1];
+
+            if (tActual === null || tAnterior === null) {
+                matrixVelocidades[index][i] = null;
+                continue;
+            }
+
+            const tDelta = tActual - tAnterior;
+
+            if (tDelta > 0 && dDelta > 0) {
+                const avgSpeedVal = dDelta / (tDelta / 3600); 
+                
+                if (avgSpeedVal > 220) {
+                    matrixVelocidades[index][i] = 'ERR_MAX';
+                } else {
+                    matrixVelocidades[index][i] = avgSpeedVal;
+                    velocidadesValidasPorSplit[i].push(avgSpeedVal);
+                }
+            } else {
+                matrixVelocidades[index][i] = 'ERR';
+            }
+        }
+    });
+
+    // Calcular el Rango Competitivo ignorando a los que tuvieron problemas
+    for (let i = 1; i < distancias.length; i++) {
+        const velocidades = velocidadesValidasPorSplit[i];
+        if (velocidades.length > 0) {
+            const maxSpeed = Math.max(...velocidades);
+            // UMBRAL: Si vas a menos del 0.XX% de la velocidad del líder, tuviste un problema
+            const umbralAnomalia = maxSpeed * 0.30; 
+            
+            // Filtramos a los accidentados para no arruinar el gradiente
+            const velocidadesCompetitivas = velocidades.filter(v => v >= umbralAnomalia);
+            const minCompetitivo = velocidadesCompetitivas.length > 0 ? Math.min(...velocidadesCompetitivas) : maxSpeed;
+
+            statsPorSplit[i] = { 
+                max: maxSpeed, 
+                min: minCompetitivo,
+                umbral: umbralAnomalia 
+            };
+        } else {
+            statsPorSplit[i] = { max: 100, min: 0, umbral: 0 };
+        }
+    }
+
+    // --- PASO 3: DIBUJAR LA TABLA ---
+    miGrafica.data.datasets.forEach((dataset, index) => {
+        if (!miGrafica.isDatasetVisible(index)) return;
+
+        const row = document.createElement('tr');
+        row.style.borderLeft = `3px solid ${dataset.borderColor}`;
+        
+        let html = `<td><small>${dataset.label}</small></td>`;
+
+        for (let i = 1; i < distancias.length; i++) {
+            const val = matrixVelocidades[index][i];
+            const stats = statsPorSplit[i];
+
+            if (val === null || val === undefined) {
+                html += `<td style="color: #555; font-style: italic;" title="Missing Split Data">NaN</td>`;
+            } else if (val === 'ERR_MAX') {
+                html += `<td style="color: #ff4444; font-weight: bold;" title="Impossible Speed (>220km/h)">ERR*</td>`;
+            } else if (val === 'ERR') {
+                html += `<td style="color: #ffaa00;" title="Time or Distance Error">ERR</td>`;
+            } else {
+                // APLICAR GRADIENTE O MARCAR COMO ANOMALÍA
+                if (val < stats.umbral) {
+                    // Outlier: El piloto tuvo un problema grave en este sector
+                    html += `<td style="color: #999999; font-style: italic;" title="Major Time Loss Detected">${val.toFixed(1)}*</td>`;
+                } else {
+                    // Gradiente competitivo
+                    let hue = 60; 
+                    if (stats.max > stats.min) {
+                        const ratio = (val - stats.min) / (stats.max - stats.min);
+                        hue = ratio * 120; // De 0 (Rojo) a 120 (Verde)
+                    }
+                    html += `<td style="color: hsl(${hue}, 100%, 60%); font-weight: bold;">${val.toFixed(1)}</td>`;
+                }
+            }
+        }
+        row.innerHTML = html;
+        body.appendChild(row);
+    });
+
+    // --- PASO 4: INYECTAR LA MINI-LEYENDA ---
+    // Buscamos la tabla para meter la leyenda justo debajo
+    const tableWrapper = document.querySelector('.table-wrapper') || body.parentElement;
+    
+    if (!legendDiv) {
+        legendDiv = document.createElement('div');
+        legendDiv.id = 'speedTableLegend';
+        tableWrapper.appendChild(legendDiv);
+    }
+    
+    // --- PASO 4: LEYENDA DINÁMICA CON BARRA DE GRADIENTE ---
+
+    // Calculamos valores reales para los tooltips de la leyenda
+    const todasLasVelocidades = statsPorSplit.filter(s => s).map(s => s.max);
+    const todasLasMinimas = statsPorSplit.filter(s => s).map(s => s.min);
+
+    const maxAbsoluta = todasLasVelocidades.length > 0 ? Math.max(...todasLasVelocidades).toFixed(1) : "0";
+    const minAbsoluta = todasLasMinimas.length > 0 ? Math.min(...todasLasMinimas).toFixed(1) : "0";
+    const avgTramo = todasLasVelocidades.length > 0 ? (todasLasVelocidades.reduce((a, b) => a + b, 0) / todasLasVelocidades.length).toFixed(1) : "0";
+
+    legendDiv.innerHTML = `
+        <div style="margin-top: 20px; border-top: 1px dashed #333; padding-top: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 0.7rem; color: #00ff00; font-weight: bold; text-transform: uppercase;">Fast</span>
+                
+                <div style="flex-grow: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, #00ff00, #ffff00, #ff0000);"></div>
+                
+                <span style="font-size: 0.7rem; color: #ff4444; font-weight: bold; text-transform: uppercase;">Slow</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: #888; white-space: nowrap;">
+                
+                <div style="display: flex; gap: 12px;">
+                    <span><b style="color: #999; font-style: italic;">Val*</b> Possible Issue</span>
+                    <span><b style="color: #ffaa00">ERR</b> Data Error</span>
+                    <span><b style="color: #ff4444">ERR*</b> Invalid (>220km/h)</span>
+                </div>
+
+                <div style="display: flex; gap: 12px; border-left: 1px solid #333; padding-left: 12px;">
+                    <span>Max Sector: <b style="color: #eee;">${maxAbsoluta} km/h</b></span>
+                    <span>Avg Pace: <b style="color: #eee;">${avgTramo} km/h</b></span>
+                    <span>Min Sector: <b style="color: #eee;">${minAbsoluta} km/h</b></span>
+                </div>
+                
+            </div>
+        </div>
+    `;
+    /* NOTAS TÉCNICAS SOBRE LOS VALORES MOSTRADOS:
+    
+    - Val*: Indica anomalías (pinchazos, salidas, etc.). Se activa automáticamente 
+            si el piloto se sale de la media del sector por más del porcentaje seleccionado.
+            
+    - Max Sector: Velocidad del coche más rápido en la zona más veloz. 
+                    Representa la máxima velocidad media absoluta registrada entre todos los splits.
+                    
+    - Avg Pace: Velocidad media de "cabeza" de todo el recorrido. 
+                Es el promedio de las velocidades más rápidas de cada split, una estimación de la velocidad promedio perfecta para el tramo.
+                
+    - Min Sector: Velocidad del coche más lento en la zona más trabada. 
+                    Define el suelo de la competición, desestimando todos los valores que tienen asterisco.
+    */
+}
+
+function actualizarVisibilidadTabla() {
+    // Recuperamos los pilotos del dataset de la gráfica para mantener el orden y estado
+    const pilotosParaTabla = miGrafica.data.datasets.map((ds, index) => {
+        return {
+            label: ds.label,
+            tiempos: ds.data,
+            visible: miGrafica.isDatasetVisible(index),
+            color: ds.borderColor
+        };
+    });
+
+    generarTablaVelocidades(null, null, ultimoSplitIds, ultimoMapaDistancias, ultimaInfoEtapa);
 }
